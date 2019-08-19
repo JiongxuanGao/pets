@@ -16,7 +16,7 @@
       <el-option v-for="item in petTypes" :key="item.value" :label="item.label" :value="item.value"></el-option>
     </el-select>
     <el-divider />
-    <el-tree :data="ownersTreeNodeData" default-expand-all empty-text="No data"></el-tree>
+    <el-tree :data="ownersTreeNodeData" default-expand-all empty-text="No owner found."></el-tree>
   </div>
 </template>
 
@@ -71,52 +71,93 @@ export default {
         })
         .finally(() => {
           this.loading = false;
-          // transform the owners info
-          if (this.allOwners) {
-            console.log("Owners count:" + this.allOwners.length);
-            var owner;
-            for (owner of this.allOwners) {
-              if (owner) {
-                console.log("Owner name=" + owner.name + ", gender=" + owner.gender + ", age=" + owner.age);
-                if (owner.pets) {
-                  var pet;
-                  for (pet of owner.pets) {
-                    console.log("---pet name=" + pet.name + ", type=" + pet.type);
-                    if (this.petType.toUpperCase() === pet.type.toUpperCase()) {
-                      if ("Male".toUpperCase() === owner.gender.toUpperCase()) {
-                        // male owner
-                        if (!this.maleOwners.includes(owner.name)) {
-                          this.maleOwners.push(owner.name);
-                        }
-                      } else if (
-                        "Female".toUpperCase() === owner.gender.toUpperCase()
-                      ) {
-                        // female owner
-                        if (!this.femaleOwners.includes(owner.name)) {
-                          this.femaleOwners.push(owner.name);
-                        }
-                      } else {
-                        console.log("Unknow gender " + owner.gender + "!!!");
-                      }
-                    } else {
-                      console.log(pet.type + " is not " + this.petType + "!!!");
+          // parse the owners from response
+          this.parseOwnersFromResponse();
+        });
+    },
+    parseOwnersFromResponse() {
+      // get the owners info from backend response
+      if (this.allOwners) {
+        console.log("Owners count:" + this.allOwners.length);
+        var owner;
+        for (owner of this.allOwners) {
+          if (owner) {
+            console.log(
+              "Owner name=" +
+                owner.name +
+                ", gender=" +
+                owner.gender +
+                ", age=" +
+                owner.age
+            );
+            if (owner.pets) {
+              var pet;
+              for (pet of owner.pets) {
+                console.log("---pet name=" + pet.name + ", type=" + pet.type);
+                if (this.petType.toUpperCase() === pet.type.toUpperCase()) {
+                  if ("Male".toUpperCase() === owner.gender.toUpperCase()) {
+                    // male owner
+                    if (!this.maleOwners.includes(owner.name)) {
+                      this.maleOwners.push(owner.name);
                     }
+                  } else if (
+                    "Female".toUpperCase() === owner.gender.toUpperCase()
+                  ) {
+                    // female owner
+                    if (!this.femaleOwners.includes(owner.name)) {
+                      this.femaleOwners.push(owner.name);
+                    }
+                  } else {
+                    console.log("Unknow gender " + owner.gender + "!!!");
                   }
+                } else {
+                  console.log(pet.type + " is not " + this.petType + "!!!");
                 }
               }
             }
-            // Alphabetize the lists in alphabetical order
-            this.maleOwners.sort();
-            this.femaleOwners.sort();
-            console.log("Male owners:" + this.maleOwners);
-            console.log("Female owners:" + this.femaleOwners);
           }
+        }
+        // Alphabetize the lists in alphabetical order
+        this.maleOwners.sort();
+        this.femaleOwners.sort();
+        console.log("Male owners:" + this.maleOwners);
+        console.log("Female owners:" + this.femaleOwners);
+        // Transform to tree node data and show it!
+        this.transformToTreeNodeData();
+      }
+    },
+    transformToTreeNodeData() {
+      // Transform all the filtered owner info to our tree node data.
+      if (this.maleOwners.length != 0 || this.femaleOwners.length != 0) {
+        // Male owner node
+        var maleNodeData = [];
+        var ownerName;
+        for (ownerName of this.maleOwners) {
+          maleNodeData.push({ label: ownerName });
+        }
+        this.ownersTreeNodeData.push({
+          label: "Male",
+          children: maleNodeData
         });
+
+        // Female owner node
+        var femaleNodeData = [];
+        for (ownerName of this.femaleOwners) {
+          femaleNodeData.push({ label: ownerName });
+        }
+        this.ownersTreeNodeData.push({
+          label: "Female",
+          children: femaleNodeData
+        });
+      } else {
+        console.log("No matched owner!!!!!");
+      }
     },
     reset() {
       this.allOwners = [];
       this.maleOwners = [];
       this.femaleOwners = [];
+      this.ownersTreeNodeData = [];
     }
   }
 };
